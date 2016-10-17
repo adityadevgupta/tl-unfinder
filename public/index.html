@@ -1,49 +1,49 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <title>tl-unfinder</title>
-    <style>
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      #locationField {
-        position: absolute;
-        top: 70px;
-      }
-      #autocomplete {
-        font-size: 18px;
-        width: 500px;
-      }
-      #response{
-        top: 90px;
-        font-size: 18px;
-      }
-      #map {
-        height: 50%;
-        width: 50%;
-        top: 150px;
-        position:absolute;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>Is it in the Tenderloin?</h2>
-     <div id="locationField">
-      <input id="autocomplete" placeholder="Enter your address"
-             onFocus="geolocate()" type="text"></input>
-      <hr>
-      <div id="response"></div>
-    </div>
-    <div id="map"></div>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <title>tl-unfinder</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #locationField {
+      position: absolute;
+      top: 70px;
+    }
+    #autocomplete {
+      font-size: 18px;
+      width: 500px;
+    }
+    #response{
+      top: 90px;
+      font-size: 18px;
+    }
+    #map {
+      height: 50%;
+      width: 50%;
+      top: 150px;
+      position:absolute;
+    }
+  </style>
+</head>
+<body>
+  <h2>Is it in the Tenderloin?</h2>
+  <div id="locationField">
+    <input id="autocomplete" placeholder="Enter your address"
+    onFocus="geolocate()" type="text"></input>
+    <hr>
+    <div id="response"></div>
+  </div>
+  <div id="map"></div>
 
-    <script>
-      // This example requires the Geometry library. Include the libraries=geometry
-      // parameter when you first load the API. For example:
-      // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=geometry">
+  <script>
+
+      var autocomplete;
+      var marker;
 
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
@@ -51,54 +51,43 @@
           zoom: 14,
         });
 
+        marker = new google.maps.Marker({});
+
         var tl_coords = [
-          {lat: 37.78019, lng: -122.42034},
-          {lat: 37.78102, lng: -122.41371}, 
-          {lat: 37.78063, lng: -122.41249}, 
-          {lat: 37.78214, lng: -122.41062}, 
-          {lat: 37.78328, lng: -122.40908}, 
-          {lat: 37.78916, lng: -122.41027}, 
-          {lat: 37.78812, lng: -122.41855}, 
-          {lat: 37.7889, lng: -122.41865}, 
-          {lat: 37.78848, lng: -122.42199}, 
-          {lat: 37.78769, lng: -122.4218}
+        {lat: 37.78019, lng: -122.42034},
+        {lat: 37.78102, lng: -122.41371}, 
+        {lat: 37.78063, lng: -122.41249}, 
+        {lat: 37.78214, lng: -122.41062}, 
+        {lat: 37.78328, lng: -122.40908}, 
+        {lat: 37.78916, lng: -122.41027}, 
+        {lat: 37.78812, lng: -122.41855}, 
+        {lat: 37.7889, lng: -122.41865}, 
+        {lat: 37.78848, lng: -122.42199}, 
+        {lat: 37.78769, lng: -122.4218}
 
         ];
 
-        tl_region = new google.maps.Polygon({paths: tl_coords});
-
-        google.maps.event.addListener(map, 'click', function(e) {
-          var resultColor =
-              google.maps.geometry.poly.containsLocation(e.latLng, tl_region) ?
-              'red' :
-              'green';
-
-              console.log(e.latLng);
-
-          new google.maps.Marker({
-            position: e.latLng,
-            map: map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: resultColor,
-              fillOpacity: .2,
-              strokeColor: 'white',
-              strokeWeight: .5,
-              scale: 10
-            }
-          });
+        tl_polygon = new google.maps.Polygon({
+          paths: tl_coords,
+          draggable: false, // turn off if it gets annoying
+          editable: false,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 0.5,
+          fillColor: '#FF0000',
+          fillOpacity: 0.15
         });
+
+        tl_polygon.setMap(map);
+
       }
-
-      var autocomplete;
-
 
       function initAutocomplete() {
         // Create the autocomplete object, restricting the search to geographical
         // location types.
         autocomplete = new google.maps.places.Autocomplete(
-            /** @type {!HTMLInputElement} */(document.getElementById('autocomplete')),
-            {types: ['geocode']});
+          /** @type {!HTMLInputElement} */(document.getElementById('autocomplete')),
+          {types: ['geocode']});
 
         // When the user selects an address from the dropdown, populate the address
         // fields in the form.
@@ -109,27 +98,33 @@
         // Get the place details from the autocomplete object.
         var place = autocomplete.getPlace();
 
-        if(google.maps.geometry.poly.containsLocation(place.geometry.location, tl_region)) 
+        if(google.maps.geometry.poly.containsLocation(place.geometry.location, tl_polygon)) 
         {
           document.getElementById('response').innerHTML="<font color='red'>Yes</font>";
         } else {
           document.getElementById('response').innerHTML="<font color='green'>No, you're good.</font>";
         }
 
-        myLatLng = (place.geometry.location.lat, place.geometry.location.lng);
+        var resultColor =
+        google.maps.geometry.poly.containsLocation(place.geometry.location, tl_polygon) ?
+        'red' :
+        'green';
 
-         // new google.maps.Marker({
-         //    position: myLatLng
-         //    map: map,
-         //    icon: {
-         //      path: google.maps.SymbolPath.CIRCLE,
-         //      fillColor: resultColor,
-         //      fillOpacity: .2,
-         //      strokeColor: 'white',
-         //      strokeWeight: .5,
-         //      scale: 5
-         //    }
-         //  });
+        marker.setMap(null);
+
+        marker = new google.maps.Marker({
+          position: place.geometry.location,
+          map: map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: resultColor,
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: .5,
+            strokeOpacity: 0,
+            scale: 6
+          }
+        });
 
       }
 
@@ -159,6 +154,6 @@
 
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnD9WVPyEphBmmDZiHUh1lkVEdoYKQMX4&libraries=geometry,places&callback=init"
-         async defer></script>
+    async defer></script>
   </body>
-</html>
+  </html>
